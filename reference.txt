@@ -40,3 +40,38 @@ app.action('button_click', async ({ body, ack, say }) => {
 
 -----------------------------
 
+## AXIOS POST
+
+---
+
+
+  //POST https://www.googleapis.com/drive/v3/files?key=[YOUR_API_KEY] HTTP/1.1
+
+  async function doThing() {
+    console.log(`Bearer ${oauth2Client.credentials.access_token}`);
+
+  let postData = {
+    mimeType: "application/vnd.google-apps.document",
+    name: "testingAPI",
+    parents: [
+      "14W6W_jCUxuFI56ZJKYdIPjkeGUtWC65I"
+    ],
+  };
+
+  let axiosConfig = {
+    headers: {
+      Authorization: `Bearer ${oauth2Client.credentials.access_token}`,
+      "Content-Type": "application/json",
+    }
+  };
+
+  axios.post("https://www.googleapis.com/drive/v3/files?key=AIzaSyDobqWMKKEMTZdNT4vz3Lx_q6jrcM3zjI8", postData, axiosConfig)
+    .then((res) => {
+    console.log("RESPONSE RECEIVED: ", res);
+  }).catch((err) => {
+    console.log("AXIOS ERROR: ", err);
+  })
+
+}
+
+---
