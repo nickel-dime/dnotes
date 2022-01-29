@@ -39,7 +39,7 @@ const drive = google.drive({
 (async () => {
   // Start your app
   await app.start(process.env.PORT || 3000);
-
+  authenticate(() => console.log("HI"))
   console.log("⚡️ Bolt app is running!");
 })();
 
@@ -304,284 +304,12 @@ app.action("create_meeting", async ({ body, ack, client }) => {
             }
           ]
         }
-    //     "title": {
-    //       "type": "plain_text",
-    //       "text": "Create A New Meeting",
-    //       "emoji": true
-    //     },
-    //     "submit": {
-    //       "type": "plain_text",
-    //       "text": "Submit",
-    //       "emoji": true
-    //     },
-    //     "type": "modal",
-    //     "callback_id": 'create_meeting_modal',
-    //     "close": {
-    //       "type": "plain_text",
-    //       "text": "Cancel",
-    //       "emoji": true
-    //     },
-    //     "blocks": [
-    //       {
-    //         "type": "header",
-    //         "text": {
-    //           "type": "plain_text",
-    //           "text": "Select a Conversation to Post Meeting Notes In: ",
-    //           "emoji": true
-    //         }
-    //       },
-    //       {
-    //         "type": "actions",
-    //         "block_id": 'block_conversation',
-    //         "elements": [
-    //           {
-    //             "type": "conversations_select",
-    //             "placeholder": {
-    //               "type": "plain_text",
-    //               "text": "Select a conversation",
-    //               "emoji": true
-    //             },
-    //             "action_id": "action_block"
-    //           }
-    //         ]
-    //       },
-    //       {
-    //         "type": "divider"
-    //       },
-    //       {
-    //         "type": "header",
-    //         "text": {
-    //           "type": "plain_text",
-    //           "text": "Meeting Time: ",
-    //           "emoji": true
-    //         }
-    //       },
-    //       {
-    //         "type": "section",
-    //         "text": {
-    //           "type": "mrkdwn",
-    //           "text": "*Today, 5 January*"
-    //         },
-    //         "accessory": {
-    //           "type": "button",
-    //           "text": {
-    //             "type": "plain_text",
-    //             "text": "Manage App Settings",
-    //             "emoji": true
-    //           },
-    //           "value": "settings"
-    //         }
-    //       },
-    //       {
-    //         "type": "input",
-    //         "block_id": 'block_time',
-    //         "element": {
-    //           "type": "timepicker",
-    //           "placeholder": {
-    //             "type": "plain_text",
-    //             "text": "Select time",
-    //             "emoji": true
-    //           },
-    //           "action_id": "timepicker-action"
-    //         },
-    //         "label": {
-    //           "type": "plain_text",
-    //           "text": "Select a Time: ",
-    //           "emoji": true
-    //         }
-    //       },
-    //       {
-    //         "type": "input",
-    //         "block_id": 'block_date',
-    //         "element": {
-    //           "type": "datepicker",
-    //           "placeholder": {
-    //             "type": "plain_text",
-    //             "text": "Select a date",
-    //             "emoji": true
-    //           },
-    //           "action_id": "datepicker-action"
-    //         },
-    //         "label": {
-    //           "type": "plain_text",
-    //           "text": "Select a Date: ",
-    //           "emoji": true
-    //         }
-    //       },
-    //       {
-    //         "type": "divider"
-    //       },
-    //       {
-    //         "type": "header",
-    //         "text": {
-    //           "type": "plain_text",
-    //           "text": "Optional:",
-    //           "emoji": true
-    //         }
-    //       },
-    //       {
-    //         "type": "section",
-    //         "block_id": 'block_sub',
-    //         "text": {
-    //           "type": "mrkdwn",
-    //           "text": "Sub-Folder: "
-    //         },
-    //         "accessory": {
-    //           "type": "multi_conversations_select",
-    //           "placeholder": {
-    //             "type": "plain_text",
-    //             "text": "Select conversations",
-    //             "emoji": true
-    //           },
-    //           "action_id": "multi_conversations_select-action"
-    //         }
-    //       },
-    //       {
-    //         "type": "section",
-    //         "text": {
-    //           "type": "mrkdwn",
-    //           "text": "Send a Reminder to the Following Conversation(s):"
-    //         },
-    //         "accessory": {
-    //           "type": "multi_conversations_select",
-    //           "placeholder": {
-    //             "type": "plain_text",
-    //             "text": "Select conversations",
-    //             "emoji": true
-    //           },
-    //           "action_id": "multi_conversations_select-action"
-    //         }
-    //       },
-    //       {
-    //         "type": "divider"
-    //       },
-    //       {
-    //         "type": "section",
-    //         "text": {
-    //           "type": "mrkdwn",
-    //           "text": "*<fakelink.toUrl.com|Marketing weekly sync>*\n11:30am — 12:30pm  |  SF500 · 7F · Saturn (5)\nStatus: ✅ Going"
-    //         },
-    //         "accessory": {
-    //           "type": "overflow",
-    //           "options": [
-    //             {
-    //               "text": {
-    //                 "type": "plain_text",
-    //                 "text": "View Event Details",
-    //                 "emoji": true
-    //               },
-    //               "value": "view_event_details"
-    //             },
-    //             {
-    //               "text": {
-    //                 "type": "plain_text",
-    //                 "text": "Change Response",
-    //                 "emoji": true
-    //               },
-    //               "value": "change_response"
-    //             }
-    //           ]
-    //         }
-    //       },
-    //       {
-    //         "type": "actions",
-    //         "elements": [
-    //           {
-    //             "type": "button",
-    //             "text": {
-    //               "type": "plain_text",
-    //               "text": "Join Video Call",
-    //               "emoji": true
-    //             },
-    //             "style": "primary",
-    //             "value": "join"
-    //           }
-    //         ]
-    //       },
-    //       {
-    //         "type": "actions",
-    //         "elements": [
-    //           {
-    //             "type": "static_select",
-    //             "placeholder": {
-    //               "type": "plain_text",
-    //               "text": "Going?",
-    //               "emoji": true
-    //             },
-    //             "options": [
-    //               {
-    //                 "text": {
-    //                   "type": "plain_text",
-    //                   "text": "Going",
-    //                   "emoji": true
-    //                 },
-    //                 "value": "going"
-    //               },
-    //               {
-    //                 "text": {
-    //                   "type": "plain_text",
-    //                   "text": "Maybe",
-    //                   "emoji": true
-    //                 },
-    //                 "value": "maybe"
-    //               },
-    //               {
-    //                 "text": {
-    //                   "type": "plain_text",
-    //                   "text": "Not going",
-    //                   "emoji": true
-    //                 },
-    //                 "value": "decline"
-    //               }
-    //             ]
-    //           }
-    //         ]
-    //       },
-    //       {
-    //         "type": "divider"
-    //       },
-    //       {
-    //         "type": "context",
-    //         "elements": [
-    //           {
-    //             "type": "image",
-    //             "image_url": "https://api.slack.com/img/blocks/bkb_template_images/placeholder.png",
-    //             "alt_text": "placeholder"
-    //           }
-    //         ]
-    //       },
-    //       {
-    //         "type": "context",
-    //         "elements": [
-    //           {
-    //             "type": "mrkdwn",
-    //             "text": "Past events"
-    //           }
-    //         ]
-    //       },
-    //       {
-    //         "type": "section",
-    //         "text": {
-    //           "type": "mrkdwn",
-    //           "text": "*Marketing team breakfast*\n8:30am — 9:30am  |  SF500 · 7F · Saturn (5)"
-    //         }
-    //       },
-    //       {
-    //         "type": "divider"
-    //       },
-    //       {
-    //         "type": "section",
-    //         "text": {
-    //           "type": "mrkdwn",
-    //           "text": "*Coffee chat w/ candidate*\n10:30am — 11:00am  |  SF500 · 10F · Cafe"
     });
     console.log(result);
   } catch (error) {
     console.error(error);
   }
 });
-
-let urlTemp = "";
 
 // Handle a view_submission request
 app.view(
@@ -592,102 +320,67 @@ app.view(
 
     // Do whatever you want with the input data - here we're saving it to a DB then sending the user a verifcation of their submission
 
-    // console.log(body);
-    // console.log('\n');
-    // console.log(view['state']['values']);
-    // console.log(view['state']['values']['block_conversation']['action_block'].selected_conversation);
-    // console.log(view.state.values['block_conversation']['action_block'].selected_conversation);
-    // console.log(view.state.values['block_conversation']);
-
-
     const values = view.state.values;
-    console.log(values['block_title']['plain_text_input-action'].value);
-    console.log(values['block_time']['timepicker-action'].selected_time);
-    console.log(values['block_url']['plain_text_input-action'].value);
-    await authenticate(createFile(values['block_title']['plain_text_input-action'].value))
 
-    try {
-      // Call the chat.postMessage method using the WebClient
-      const result = await client.chat.postMessage({
-        channel:
-          values["block_conversation"]["action_block"]
-            .selected_conversation,
-        blocks: [
-          {
-            type: "header",
-            text: {
-              type: "plain_text",
-              text: values['block_title']['plain_text_input-action'].value,
-              emoji: true,
-            },
-          },
-          {
-            type: "section",
-            text: {
-              type: "plain_text",
-              text: values['block_time']['timepicker-action'].selected_time,
-              emoji: true,
-            },
-          },
-          {
-            type: "actions",
-            elements: [
-              {
-                type: "button",
-                text: {
-                  type: "plain_text",
-                  text: "Join Video Call",
-                  emoji: true,
-                },
-                url: values['block_url']['plain_text_input-action'].value,
-                value: "join",
+    await createFile(values['block_title']['plain_text_input-action'].value, async function(url) {
+      console.log("url is", url);
+      try {
+        // Call the chat.postMessage method using the WebClient
+        const result = await client.chat.postMessage({
+          channel:
+            values["block_conversation"]["action_block"]
+              .selected_conversation,
+          blocks: [
+            {
+              type: "header",
+              text: {
+                type: "plain_text",
+                text: values['block_title']['plain_text_input-action'].value,
+                emoji: true,
               },
-              {
-                type: "button",
-                text: {
-                  type: "plain_text",
-                  text: "Meeting Notes",
-                  emoji: true,
-                },
-                url: urlTemp,
-                value: "join",
+            },
+            {
+              type: "section",
+              text: {
+                type: "plain_text",
+                text: values['block_time']['timepicker-action'].selected_time,
+                emoji: true,
               },
-            ],
-          },
-        ],
-      });
-
-      console.log(result);
-    } catch (error) {
-      console.error(error);
-    }
-
-    // // Assume there's an input block with `block_1` as the block_id and `input_a`
-    // const val = view['state']['values']['block_1']['input_a'];
-    // const user = body['user']['id'];
-
-    // // Message to send user
-    // let msg = '';
-    // // Save to DB
-    // const results = await db.set(user.input, val);
-
-    // if (results) {
-    //   // DB save was successful
-    //   msg = 'Your submission was successful';
-    // } else {
-    //   msg = 'There was an error with your submission';
-    // }
-
-    // // Message the user
-    // try {
-    //   await client.chat.postMessage({
-    //     channel: user,
-    //     text: msg
-    //   });
-    // }
-    // catch (error) {
-    //   logger.error(error);
-    // }
+            },
+            {
+              type: "actions",
+              elements: [
+                {
+                  type: "button",
+                  text: {
+                    type: "plain_text",
+                    text: "Join Video Call",
+                    emoji: true,
+                  },
+                  url: values['block_url']['plain_text_input-action'].value,
+                  value: "join",
+                },
+                {
+                  type: "button",
+                  text: {
+                    type: "plain_text",
+                    text: "Meeting Notes",
+                    emoji: true,
+                  },
+                  url: url,
+                  value: "join",
+                },
+              ],
+            },
+          ],
+        });
+  
+        console.log(result);
+      } catch (error) {
+        console.error(error);
+      }
+    })
+     
   }
 );
 
@@ -746,8 +439,8 @@ async function getAccessToken(callback) {
  * @param {String} name name of file you want created
  * @returns url of file
  */
-function createFile(name) {
-  return function () {
+async function createFile(name, callback) {
+  // return function () {
     console.log("CREATING FILE");
     drive.files.create(
       {
@@ -765,12 +458,23 @@ function createFile(name) {
           console.log(
             `https://docs.google.com/document/d/${file.data.id}/edit`
           );
-          urlTemp = `https://docs.google.com/document/d/${file.data.id}/edit`;
-          // return `https://docs.google.com/document/d/${file.data.id}/edit`;
+          callback(`https://docs.google.com/document/d/${file.data.id}/edit`);
         }
       }
     );
-  };
+  // };
+}
+
+function isValidHttpUrl(string) {
+  let url;
+  
+  try {
+    url = new URL(string);
+  } catch (_) {
+    return false;  
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
 }
 
 // ISSUES
