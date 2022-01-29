@@ -8,7 +8,6 @@ const opn = require("open");
 const destroyer = require("server-destroy");
 const fs = require("fs");
 
-
 // Initializes your app with your bot token and signing secret
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -35,11 +34,10 @@ const drive = google.drive({
   auth: oauth2Client,
 });
 
-
 (async () => {
   // Start your app
   await app.start(process.env.PORT || 3000);
-  authenticate(() => console.log("HI"))
+  authenticate(() => console.log("HI"));
   console.log("⚡️ Bolt app is running!");
 })();
 
@@ -53,14 +51,19 @@ app.event("app_home_opened", async ({ payload, client }) => {
       user_id: userId,
       view: {
         // Home tabs must be enabled in your app configuration page under "App Home"
+
         type: "home",
         blocks: [
           {
-            type: "section",
+            type: "header",
             text: {
-              type: "mrkdwn",
-              text: "*Welcome to Doxx, <@" + userId + "> :house:*",
+              type: "plain_text",
+              text: "Welcome",
+              emoji: true,
             },
+          },
+          {
+            type: "divider",
           },
           {
             type: "actions",
@@ -74,23 +77,108 @@ app.event("app_home_opened", async ({ payload, client }) => {
                 },
                 action_id: "create_meeting",
               },
+              {
+                "type": "button",
+                "text": {
+                  "type": "plain_text",
+                  "text": "Create Doc",
+                  "emoji": true
+                },
+                "value": "click_me_123",
+                "action_id": "actionId-0"
+              }
             ],
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Upcoming Meetings :calendar:",
+              emoji: true,
+            },
           },
           {
             type: "divider",
           },
           {
-            type: "context",
-            elements: [
-              {
-                type: "mrkdwn",
-                text: "Doxx",
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "`11/20-11/22` *Beet the Competition*",
+            },
+            accessory: {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: "Join Meeting",
+                emoji: true,
               },
-              {
-                type: "mrkdwn",
-                text: "goepnik@gmail.com",
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "`12/01` *Daily Standup*",
+            },
+            accessory: {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: "Join Meeting",
+                emoji: true,
               },
-            ],
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "`11/13` *Business Exec Meeting*",
+            },
+            accessory: {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: "Join Meeting",
+                emoji: true,
+              },
+            },
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Past Meetings :calendar:",
+              emoji: true,
+            },
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "`10/21` *Conference Room Meeting*",
+            },
+            accessory: {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: "View Notes",
+                emoji: true,
+              },
+            },
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "image",
+            image_url:
+              "https://media.istockphoto.com/vectors/creative-writing-and-storytelling-concept-illustration-copywriting-vector-id998352216?b=1&k=20&m=998352216&s=170667a&w=0&h=c2U3iK9JdEG8c5blChppXEMKHSkprWlCAgQj4skLack=",
+            alt_text: "inspiration",
           },
         ],
       },
@@ -110,200 +198,183 @@ app.action("create_meeting", async ({ body, ack, client }) => {
     const result = await client.views.open({
       trigger_id: body.trigger_id,
       view: {
-          "title": {
-            "type": "plain_text",
-            "text": "Create A New Meeting",
-            "emoji": true
+        title: {
+          type: "plain_text",
+          text: "Create A New Meeting",
+          emoji: true,
+        },
+        submit: {
+          type: "plain_text",
+          text: "Submit",
+          emoji: true,
+        },
+        type: "modal",
+        callback_id: "create_meeting_modal",
+        close: {
+          type: "plain_text",
+          text: "Cancel",
+          emoji: true,
+        },
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Select a Conversation to Post Meeting Notes In: ",
+              emoji: true,
+            },
           },
-          "submit": {
-            "type": "plain_text",
-            "text": "Submit",
-            "emoji": true
-          },
-          "type": "modal",
-          "callback_id": 'create_meeting_modal',
-          "close": {
-            "type": "plain_text",
-            "text": "Cancel",
-            "emoji": true
-          },
-          "blocks": [
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "Select a Conversation to Post Meeting Notes In: ",
-                "emoji": true
-              }
-            },
-            {
-              "type": "actions",
-              "block_id": 'block_conversation',
-              "elements": [
-                {
-                  "type": "conversations_select",
-                  "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select a conversation",
-                    "emoji": true
-                  },
-                  "action_id": "action_block"
-                }
-              ]
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "Meeting Info: ",
-                "emoji": true
-              }
-            },
-            {
-              "type": "input",
-              "block_id": 'block_title',
-              "element": {
-                "type": "plain_text_input",
-                "placeholder": {
-                  "type": "plain_text",
-                  "text": "Title of Google Doc",
-                  "emoji": true
-                },
-                "action_id": "plain_text_input-action"
-              },
-              "label": {
-                "type": "plain_text",
-                "text": "Title: ",
-                "emoji": true
-              }
-            },
-            {
-              "type": "input",
-              "block_id": 'block_time',
-              "element": {
-                "type": "timepicker",
-                "placeholder": {
-                  "type": "plain_text",
-                  "text": "Select time",
-                  "emoji": true
-                },
-                "action_id": "timepicker-action"
-              },
-              "label": {
-                "type": "plain_text",
-                "text": "Select a Time: ",
-                "emoji": true
-              }
-            },
-            {
-              "type": "input",
-              "block_id": 'block_date',
-              "element": {
-                "type": "datepicker",
-                "placeholder": {
-                  "type": "plain_text",
-                  "text": "Select a date",
-                  "emoji": true
-                },
-                "action_id": "datepicker-action"
-              },
-              "label": {
-                "type": "plain_text",
-                "text": "Select a Date: ",
-                "emoji": true
-              }
-            },
-            {
-              "type": "divider"
-            },
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "Optional:",
-                "emoji": true
-              }
-            },
-            {
-              "type": "section",
-              "block_id": 'block_sub',
-              "text": {
-                "type": "mrkdwn",
-                "text": "Sub-Folder: "
-              },
-              "accessory": {
-                "type": "multi_conversations_select",
-                "placeholder": {
-                  "type": "plain_text",
-                  "text": "Select conversations",
-                  "emoji": true
-                },
-                "action_id": "multi_conversations_select-action"
-              }
-            },
+          {
+            type: "actions",
+            block_id: "block_conversation",
+            elements: [
               {
-                "type": "input",
-                "block_id": 'block_url',
-                "optional": true,
-                "element": {
-                  "type": "plain_text_input",
-                  "placeholder": {
-                    "type": "plain_text",
-                    "text": "Link to meeting URL",
-                    "emoji": true
-                  },
-                  "action_id": "plain_text_input-action"
+                type: "conversations_select",
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select a conversation",
+                  emoji: true,
                 },
-                "label": {
-                  "type": "plain_text",
-                  "text": "Input Meeting URL: ",
-                  "emoji": true
-                }
+                "filter": {
+                  "include": [
+                    "mpim",
+                    "im",
+                    "public"
+                  ],
+                  "exclude_bot_users": true
+                },
+                action_id: "action_block",
               },
-            {
-              "type": "divider"
+            ],
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Meeting Info: ",
+              emoji: true,
             },
-            {
-              "type": "context",
-              "elements": [
-                {
-                  "type": "image",
-                  "image_url": "https://api.slack.com/img/blocks/bkb_template_images/placeholder.png",
-                  "alt_text": "placeholder"
-                }
-              ]
+          },
+          {
+            type: "input",
+            block_id: "block_title",
+            element: {
+              type: "plain_text_input",
+              placeholder: {
+                type: "plain_text",
+                text: "Title of Google Doc",
+                emoji: true,
+              },
+              action_id: "plain_text_input-action",
             },
-            {
-              "type": "context",
-              "elements": [
-                {
-                  "type": "mrkdwn",
-                  "text": "Past events"
-                }
-              ]
+            label: {
+              type: "plain_text",
+              text: "Title: ",
+              emoji: true,
             },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": "*Marketing team breakfast*\n8:30am — 9:30am  |  SF500 · 7F · Saturn (5)"
-              }
+          },
+          {
+            type: "input",
+            block_id: "block_time",
+            element: {
+              type: "timepicker",
+              placeholder: {
+                type: "plain_text",
+                text: "Select time",
+                emoji: true,
+              },
+              action_id: "timepicker-action",
             },
-            {
-              "type": "divider"
+            label: {
+              type: "plain_text",
+              text: "Select a Time: ",
+              emoji: true,
             },
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": "*Coffee chat w/ candidate*\n10:30am — 11:00am  |  SF500 · 10F · Cafe"
-              }
-            }
-          ]
-        }
+          },
+          {
+            type: "input",
+            block_id: "block_date",
+            element: {
+              type: "datepicker",
+              placeholder: {
+                type: "plain_text",
+                text: "Select a date",
+                emoji: true,
+              },
+              action_id: "datepicker-action",
+            },
+            label: {
+              type: "plain_text",
+              text: "Select a Date: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Optional:",
+              emoji: true,
+            },
+          },
+          {
+            type: "section",
+            block_id: "block_sub",
+            text: {
+              type: "mrkdwn",
+              text: "Sub-Folder: ",
+            },
+            accessory: {
+              type: "multi_conversations_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select conversations",
+                emoji: true,
+              },
+              action_id: "multi_conversations_select-action",
+            },
+          },
+          {
+            type: "input",
+            block_id: "block_url",
+            optional: true,
+            element: {
+              type: "plain_text_input",
+              placeholder: {
+                type: "plain_text",
+                text: "Link to meeting URL",
+                emoji: true,
+              },
+              action_id: "plain_text_input-action",
+            },
+            label: {
+              type: "plain_text",
+              text: "Input Meeting URL: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "context",
+            elements: [
+              {
+                type: "image",
+                image_url:
+                  "https://api.slack.com/img/blocks/bkb_template_images/placeholder.png",
+                alt_text: "placeholder",
+              },
+            ],
+          },
+        ],
+      },
     });
     console.log(result);
   } catch (error) {
@@ -321,66 +392,87 @@ app.view(
     // Do whatever you want with the input data - here we're saving it to a DB then sending the user a verifcation of their submission
 
     const values = view.state.values;
+    console.log(values);
 
-    await createFile(values['block_title']['plain_text_input-action'].value, async function(url) {
-      console.log("url is", url);
-      try {
-        // Call the chat.postMessage method using the WebClient
-        const result = await client.chat.postMessage({
-          channel:
-            values["block_conversation"]["action_block"]
-              .selected_conversation,
-          blocks: [
+    await createFile(
+      values["block_title"]["plain_text_input-action"].value,
+      async function (url) {
+        let elementsToAdd = []
+        console.log('value', values["block_url"]["plain_text_input-action".value])
+        if (values["block_url"]["plain_text_input-action".value] !== undefined) {
+          elementsToAdd = [
             {
-              type: "header",
+              type: "button",
               text: {
                 type: "plain_text",
-                text: values['block_title']['plain_text_input-action'].value,
+                text: "Join Video Call",
                 emoji: true,
               },
+              url: values["block_url"]["plain_text_input-action"].value,
+              value: "join",
             },
             {
-              type: "section",
+              type: "button",
               text: {
                 type: "plain_text",
-                text: values['block_time']['timepicker-action'].selected_time,
+                text: "Meeting Notes",
                 emoji: true,
               },
+              url: url,
+              value: "join",
             },
+          ];
+        } else {
+          elementsToAdd = [
             {
-              type: "actions",
-              elements: [
-                {
-                  type: "button",
-                  text: {
-                    type: "plain_text",
-                    text: "Join Video Call",
-                    emoji: true,
-                  },
-                  url: values['block_url']['plain_text_input-action'].value,
-                  value: "join",
-                },
-                {
-                  type: "button",
-                  text: {
-                    type: "plain_text",
-                    text: "Meeting Notes",
-                    emoji: true,
-                  },
-                  url: url,
-                  value: "join",
-                },
-              ],
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: "Meeting Notes",
+                emoji: true,
+              },
+              url: url,
+              value: "join",
             },
-          ],
-        });
-  
-        console.log(result);
-      } catch (error) {
-        console.error(error);
+          ];
+        }
+
+        try {
+          // Call the chat.postMessage method using the WebClient
+          const result = await client.chat.postMessage({
+            channel:
+              values["block_conversation"]["action_block"]
+                .selected_conversation,
+            blocks: [
+              {
+                type: "header",
+                text: {
+                  type: "plain_text",
+                  text: values["block_title"]["plain_text_input-action"].value,
+                  emoji: true,
+                },
+              },
+              {
+                type: "section",
+                text: {
+                  type: "plain_text",
+                  text: values["block_time"]["timepicker-action"].selected_time,
+                  emoji: true,
+                },
+              },
+              {
+                type: "actions",
+                elements: elementsToAdd,
+              },
+            ],
+          });
+
+          console.log(result);
+        } catch (error) {
+          console.error(error);
+        }
       }
-    })
-     
+    );
   }
 );
 
@@ -441,37 +533,58 @@ async function getAccessToken(callback) {
  */
 async function createFile(name, callback) {
   // return function () {
-    console.log("CREATING FILE");
-    drive.files.create(
-      {
-        requestBody: {
-          mimeType: "application/vnd.google-apps.document",
-          name: name,
-          parents: ["14W6W_jCUxuFI56ZJKYdIPjkeGUtWC65I"],
-        },
+  console.log("CREATING FILE");
+  drive.files.create(
+    {
+      requestBody: {
+        mimeType: "application/vnd.google-apps.document",
+        name: name,
+        parents: ["14W6W_jCUxuFI56ZJKYdIPjkeGUtWC65I"],
       },
-      function (err, file) {
-        if (err) {
-          // Handle error
-          console.error(err);
-        } else {
-          console.log(
-            `https://docs.google.com/document/d/${file.data.id}/edit`
-          );
-          callback(`https://docs.google.com/document/d/${file.data.id}/edit`);
-        }
+    },
+    function (err, file) {
+      if (err) {
+        // Handle error
+        console.error(err);
+      } else {
+        drive.permissions.create(
+          {
+            resource: {
+              type: "anyone",
+              role: "writer",
+            },
+            fileId: file.data.id,
+            fields: "id",
+          },
+          function (err, res) {
+            if (err) {
+              // Handle error
+              console.log(err);
+            } else {
+              console.log(
+                `https://docs.google.com/document/d/${file.data.id}/edit`
+              );
+              console.log("Permission ID: ", res.id);
+              callback(
+                `https://docs.google.com/document/d/${file.data.id}/edit`
+              );
+            }
+          }
+        );
       }
-    );
+    }
+  );
   // };
 }
 
+
 function isValidHttpUrl(string) {
   let url;
-  
+
   try {
     url = new URL(string);
   } catch (_) {
-    return false;  
+    return false;
   }
 
   return url.protocol === "http:" || url.protocol === "https:";
@@ -483,4 +596,4 @@ function isValidHttpUrl(string) {
 // Authorize opens server everytime -> need to refresh tokens and only open if need https://developers.google.com/drive/api/v3/quickstart/nodejs
 // figure out refresh tokens and understand storing them
 // Figure out how to put authentication in separate file
-// dictionary -> 
+// dictionary ->
