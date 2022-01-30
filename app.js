@@ -84,8 +84,8 @@ app.event("app_home_opened", async ({ payload, client }) => {
                   "text": "Create Doc",
                   "emoji": true
                 },
-                "value": "click_me_123",
-                "action_id": "actionId-0"
+                //"value": "click_me_123",
+                "action_id": "create_note"
               }
             ],
           },
@@ -376,6 +376,328 @@ app.action("create_meeting", async ({ body, ack, client }) => {
         ],
       },
     });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.action("create_meeting", async ({ body, ack, client }) => {
+  // Acknowledge shortcut request
+  ack();
+
+  try {
+    // Call the views.open method using the WebClient passed to listeners
+    const result = await client.views.open({
+      trigger_id: body.trigger_id,
+      view: {
+        title: {
+          type: "plain_text",
+          text: "Create A New Meeting",
+          emoji: true,
+        },
+        submit: {
+          type: "plain_text",
+          text: "Submit",
+          emoji: true,
+        },
+        type: "modal",
+        callback_id: "create_meeting_modal",
+        close: {
+          type: "plain_text",
+          text: "Cancel",
+          emoji: true,
+        },
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Select a Conversation to Post Meeting Notes In: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "actions",
+            block_id: "block_conversation",
+            elements: [
+              {
+                type: "conversations_select",
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select a conversation",
+                  emoji: true,
+                },
+                "filter": {
+                  "include": [
+                    "mpim",
+                    "im",
+                    "public"
+                  ],
+                  "exclude_bot_users": true
+                },
+                action_id: "action_block",
+              },
+            ],
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Meeting Info: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "input",
+            block_id: "block_title",
+            element: {
+              type: "plain_text_input",
+              placeholder: {
+                type: "plain_text",
+                text: "Title of Google Doc",
+                emoji: true,
+              },
+              action_id: "plain_text_input-action",
+            },
+            label: {
+              type: "plain_text",
+              text: "Title: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "input",
+            block_id: "block_time",
+            element: {
+              type: "timepicker",
+              placeholder: {
+                type: "plain_text",
+                text: "Select time",
+                emoji: true,
+              },
+              action_id: "timepicker-action",
+            },
+            label: {
+              type: "plain_text",
+              text: "Select a Time: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "input",
+            block_id: "block_date",
+            element: {
+              type: "datepicker",
+              placeholder: {
+                type: "plain_text",
+                text: "Select a date",
+                emoji: true,
+              },
+              action_id: "datepicker-action",
+            },
+            label: {
+              type: "plain_text",
+              text: "Select a Date: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Optional:",
+              emoji: true,
+            },
+          },
+          {
+            type: "section",
+            block_id: "block_sub",
+            text: {
+              type: "mrkdwn",
+              text: "Sub-Folder: ",
+            },
+            accessory: {
+              type: "multi_conversations_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select conversations",
+                emoji: true,
+              },
+              action_id: "multi_conversations_select-action",
+            },
+          },
+          {
+            type: "input",
+            block_id: "block_url",
+            optional: true,
+            element: {
+              type: "plain_text_input",
+              placeholder: {
+                type: "plain_text",
+                text: "Link to meeting URL",
+                emoji: true,
+              },
+              action_id: "plain_text_input-action",
+            },
+            label: {
+              type: "plain_text",
+              text: "Input Meeting URL: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "context",
+            elements: [
+              {
+                type: "image",
+                image_url:
+                  "https://api.slack.com/img/blocks/bkb_template_images/placeholder.png",
+                alt_text: "placeholder",
+              },
+            ],
+          },
+        ],
+      },
+    });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.action("create_note", async ({ body, ack, client }) => {
+  // Acknowledge shortcut request
+  ack();
+
+  try {
+    // Call the views.open method using the WebClient passed to listeners
+    const result = await client.views.open({
+      trigger_id: body.trigger_id,
+      view: {
+        "type": "modal",
+             callback_id: "create_note_modal",
+	"title": {
+		"type": "plain_text",
+		"text": "Create Notes",
+		"emoji": true
+	},
+	"submit": {
+		"type": "plain_text",
+		"text": "Submit",
+		"emoji": true
+	},
+	"close": {
+		"type": "plain_text",
+		"text": "Cancel",
+		"emoji": true
+	},
+	"blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Select a Conversation to Post Notes In: ",
+				"emoji": true
+			}
+		},
+		{
+			"type": "actions",
+			"elements": [
+				{
+					"type": "conversations_select",
+					"placeholder": {
+						"type": "plain_text",
+						"text": "Select a conversation",
+						"emoji": true
+					},
+					"filter": {
+						"include": [
+							"mpim",
+							"im",
+							"public"
+						],
+						"exclude_bot_users": true
+					},
+					"action_id": "action_block"
+				}
+			]
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Notes Info: ",
+				"emoji": true
+			}
+		},
+		{
+			"type": "input",
+			"element": {
+				"type": "plain_text_input",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Title of Google Doc",
+					"emoji": true
+				},
+				"action_id": "plain_text_input-action"
+			},
+			"label": {
+				"type": "plain_text",
+				"text": "Title: ",
+				"emoji": true
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "Optional:",
+				"emoji": true
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "Sub-Folder: "
+			},
+			"accessory": {
+				"type": "multi_conversations_select",
+				"placeholder": {
+					"type": "plain_text",
+					"text": "Select conversations",
+					"emoji": true
+				},
+				"filter": {
+					"include": [
+						"mpim",
+						"im",
+						"public"
+					],
+					"exclude_bot_users": true
+				},
+				"action_id": "multi_conversations_select-action"
+          }
+        }
+      ]
+    },
+  });
     console.log(result);
   } catch (error) {
     console.error(error);
