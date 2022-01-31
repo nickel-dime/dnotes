@@ -37,8 +37,7 @@ const drive = google.drive({
 (async () => {
   // Start your app
   await app.start(process.env.PORT || 3000);
-  authenticate(() => console.log("HI"));
-  console.log("⚡️ Bolt app is running!");
+  authenticate(() => console.log('⚡️ Bolt app is running!'));
 })();
 
 // Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebar
@@ -78,15 +77,15 @@ app.event("app_home_opened", async ({ payload, client }) => {
                 action_id: "create_meeting",
               },
               {
-                "type": "button",
-                "text": {
-                  "type": "plain_text",
-                  "text": "Create Doc",
-                  "emoji": true
+                type: "button",
+                text: {
+                  type: "plain_text",
+                  text: "Create Doc",
+                  emoji: true,
                 },
-                "value": "click_me_123",
-                "action_id": "actionId-0"
-              }
+                value: "click_me_123",
+                action_id: "actionId-0",
+              },
             ],
           },
           {
@@ -235,13 +234,9 @@ app.action("create_meeting", async ({ body, ack, client }) => {
                   text: "Select a conversation",
                   emoji: true,
                 },
-                "filter": {
-                  "include": [
-                    "mpim",
-                    "im",
-                    "public"
-                  ],
-                  "exclude_bot_users": true
+                filter: {
+                  include: ["mpim", "im", "public"],
+                  exclude_bot_users: true,
                 },
                 action_id: "action_block",
               },
@@ -337,6 +332,10 @@ app.action("create_meeting", async ({ body, ack, client }) => {
                 text: "Select conversations",
                 emoji: true,
               },
+              filter: {
+                include: ["mpim", "im", "public"],
+                exclude_bot_users: true,
+              },
               action_id: "multi_conversations_select-action",
             },
           },
@@ -376,10 +375,20 @@ app.action("create_meeting", async ({ body, ack, client }) => {
         ],
       },
     });
-    console.log(result);
+    // console.log(result);
   } catch (error) {
     console.error(error);
   }
+});
+
+app.action("action_block", async ({ ack }) => {
+  await ack();
+});
+app.action("join_call", async ({ ack }) => {
+  await ack();
+});
+app.action("meeting_notes", async ({ ack }) => {
+  await ack();
 });
 
 // Handle a view_submission request
@@ -392,14 +401,16 @@ app.view(
     // Do whatever you want with the input data - here we're saving it to a DB then sending the user a verifcation of their submission
 
     const values = view.state.values;
-    console.log(values);
+    // console.log(values);
 
     await createFile(
       values["block_title"]["plain_text_input-action"].value,
       async function (url) {
-        let elementsToAdd = []
-        console.log('value', values["block_url"]["plain_text_input-action".value])
-        if (values["block_url"]["plain_text_input-action".value] !== undefined) {
+        let elementsToAdd = [];
+        console.log(values["block_url"]["plain_text_input-action"].value !== null)
+        if (isValidHttpUrl(
+          values["block_url"]["plain_text_input-action"].value)
+        ) {
           elementsToAdd = [
             {
               type: "button",
@@ -410,6 +421,7 @@ app.view(
               },
               url: values["block_url"]["plain_text_input-action"].value,
               value: "join",
+              action_id: "join_call"
             },
             {
               type: "button",
@@ -420,6 +432,7 @@ app.view(
               },
               url: url,
               value: "join",
+              action_id: "meeting_notes"
             },
           ];
         } else {
@@ -443,6 +456,7 @@ app.view(
             channel:
               values["block_conversation"]["action_block"]
                 .selected_conversation,
+            text: `Meeting at ${values["block_date"]["datepicker-action"].selected_date} ${values["block_time"]["timepicker-action"].selected_time}. ${url} to join meeting!`,
             blocks: [
               {
                 type: "header",
@@ -467,7 +481,7 @@ app.view(
             ],
           });
 
-          console.log(result);
+          // console.log(result);
         } catch (error) {
           console.error(error);
         }
@@ -533,7 +547,6 @@ async function getAccessToken(callback) {
  */
 async function createFile(name, callback) {
   // return function () {
-  console.log("CREATING FILE");
   drive.files.create(
     {
       requestBody: {
@@ -564,7 +577,6 @@ async function createFile(name, callback) {
               console.log(
                 `https://docs.google.com/document/d/${file.data.id}/edit`
               );
-              console.log("Permission ID: ", res.id);
               callback(
                 `https://docs.google.com/document/d/${file.data.id}/edit`
               );
@@ -576,7 +588,6 @@ async function createFile(name, callback) {
   );
   // };
 }
-
 
 function isValidHttpUrl(string) {
   let url;
