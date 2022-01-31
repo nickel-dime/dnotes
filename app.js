@@ -37,7 +37,7 @@ const drive = google.drive({
 (async () => {
   // Start your app
   await app.start(process.env.PORT || 3000);
-  authenticate(() => console.log('⚡️ Bolt app is running!'));
+  authenticate(() => console.log("⚡️ Bolt app is running!"));
 })();
 
 // Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebar
@@ -83,8 +83,8 @@ app.event("app_home_opened", async ({ payload, client }) => {
                   text: "Create Doc",
                   emoji: true,
                 },
-                value: "click_me_123",
-                action_id: "actionId-0",
+                //"value": "click_me_123",
+                action_id: "create_note",
               },
             ],
           },
@@ -187,7 +187,16 @@ app.event("app_home_opened", async ({ payload, client }) => {
   }
 });
 
-// Listens to create meeting button in app home
+app.action("action_block", async ({ ack }) => {
+  await ack();
+});
+app.action("join_call", async ({ ack }) => {
+  await ack();
+});
+app.action("meeting_notes", async ({ ack }) => {
+  await ack();
+});
+
 app.action("create_meeting", async ({ body, ack, client }) => {
   // Acknowledge shortcut request
   ack();
@@ -332,10 +341,6 @@ app.action("create_meeting", async ({ body, ack, client }) => {
                 text: "Select conversations",
                 emoji: true,
               },
-              filter: {
-                include: ["mpim", "im", "public"],
-                exclude_bot_users: true,
-              },
               action_id: "multi_conversations_select-action",
             },
           },
@@ -375,20 +380,131 @@ app.action("create_meeting", async ({ body, ack, client }) => {
         ],
       },
     });
-    // console.log(result);
   } catch (error) {
     console.error(error);
   }
 });
 
-app.action("action_block", async ({ ack }) => {
-  await ack();
-});
-app.action("join_call", async ({ ack }) => {
-  await ack();
-});
-app.action("meeting_notes", async ({ ack }) => {
-  await ack();
+app.action("create_note", async ({ body, ack, client }) => {
+  // Acknowledge shortcut request
+  ack();
+
+  try {
+    // Call the views.open method using the WebClient passed to listeners
+    const result = await client.views.open({
+      trigger_id: body.trigger_id,
+      view: {
+        type: "modal",
+        callback_id: "create_note_modal",
+        title: {
+          type: "plain_text",
+          text: "Create Notes",
+          emoji: true,
+        },
+        submit: {
+          type: "plain_text",
+          text: "Submit",
+          emoji: true,
+        },
+        close: {
+          type: "plain_text",
+          text: "Cancel",
+          emoji: true,
+        },
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Select a Conversation to Post Notes In: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "actions",
+            block_id: "note_channel",
+            elements: [
+              {
+                type: "conversations_select",
+                placeholder: {
+                  type: "plain_text",
+                  text: "Select a conversation",
+                  emoji: true,
+                },
+                filter: {
+                  include: ["mpim", "im", "public"],
+                  exclude_bot_users: true,
+                },
+                action_id: "action_block",
+              },
+            ],
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Notes Info: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "input",
+            block_id: "note_header",
+            element: {
+              type: "plain_text_input",
+              placeholder: {
+                type: "plain_text",
+                text: "Title of Google Doc",
+                emoji: true,
+              },
+              action_id: "plain_text_input-action",
+            },
+            label: {
+              type: "plain_text",
+              text: "Title: ",
+              emoji: true,
+            },
+          },
+          {
+            type: "divider",
+          },
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: "Optional:",
+              emoji: true,
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "Sub-Folder: ",
+            },
+            accessory: {
+              type: "multi_conversations_select",
+              placeholder: {
+                type: "plain_text",
+                text: "Select conversations",
+                emoji: true,
+              },
+              filter: {
+                include: ["mpim", "im", "public"],
+                exclude_bot_users: true,
+              },
+              action_id: "multi_conversations_select-action",
+            },
+          },
+        ],
+      },
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 // Handle a view_submission request
@@ -407,9 +523,11 @@ app.view(
       values["block_title"]["plain_text_input-action"].value,
       async function (url) {
         let elementsToAdd = [];
-        console.log(values["block_url"]["plain_text_input-action"].value !== null)
-        if (isValidHttpUrl(
-          values["block_url"]["plain_text_input-action"].value)
+        console.log(
+          values["block_url"]["plain_text_input-action"].value !== null
+        );
+        if (
+          isValidHttpUrl(values["block_url"]["plain_text_input-action"].value)
         ) {
           elementsToAdd = [
             {
@@ -421,7 +539,7 @@ app.view(
               },
               url: values["block_url"]["plain_text_input-action"].value,
               value: "join",
-              action_id: "join_call"
+              action_id: "join_call",
             },
             {
               type: "button",
@@ -432,7 +550,7 @@ app.view(
               },
               url: url,
               value: "join",
-              action_id: "meeting_notes"
+              action_id: "meeting_notes",
             },
           ];
         } else {
@@ -446,11 +564,15 @@ app.view(
               },
               url: url,
               value: "join",
+              action_id: "meeting_notes",
             },
           ];
         }
 
         try {
+          const fileId = getFileID(url)
+          createUsers(getUsersFromChannel(values["block_conversation"]["action_block"]
+          .selected_conversation), "writer", fileId)
           // Call the chat.postMessage method using the WebClient
           const result = await client.chat.postMessage({
             channel:
@@ -478,6 +600,33 @@ app.view(
                 type: "actions",
                 elements: elementsToAdd,
               },
+              {
+                type: "divider",
+              },
+              {
+                type: "actions",
+                elements: [
+                  {
+                    type: "checkboxes",
+                    options: [
+                      {
+                        text: {
+                          type: "plain_text",
+                          text: "Is the Meeting Complete?",
+                          emoji: true,
+                        },
+                        description: {
+                          type: "plain_text",
+                          text: "Check the box to indicate a completed meeting",
+                          emoji: true,
+                        },
+                        value: url,
+                      },
+                    ],
+                    action_id: "actionId-1",
+                  },
+                ],
+              },
             ],
           });
 
@@ -489,6 +638,170 @@ app.view(
     );
   }
 );
+
+// create_note_modal
+// note modal
+app.view("create_note_modal", async ({ ack, body, view, client, logger }) => {
+  // Acknowledge the view_submission request
+  await ack();
+
+  // Do whatever you want with the input data - here we're saving it to a DB then sending the user a verifcation of their submission
+
+  const values = view.state.values;
+  console.log(values);
+
+  await createFile(
+    values["note_header"]["plain_text_input-action"].value,
+    async function (url) {
+      try {
+        // Call the chat.postMessage method using the WebClient
+        const result = await client.chat.postMessage({
+          channel: values["note_channel"]["action_block"].selected_conversation,
+          text: `Google doc created in ${values["note_channel"]["action_block"].selected_conversation} channel. Click ${url} to see!`,
+          blocks: [
+            {
+              type: "header",
+              text: {
+                type: "plain_text",
+                text: values["note_header"]["plain_text_input-action"].value,
+                emoji: true,
+              },
+            },
+            {
+              type: "actions",
+              elements: [
+                {
+                  type: "button",
+                  text: {
+                    type: "plain_text",
+                    text: "Notes",
+                    emoji: true,
+                  },
+                  url: url,
+                  value: "join",
+                  action_id: "meeting_notes",
+                },
+              ],
+            },
+          ],
+        });
+
+        // console.log(result);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  );
+});
+
+function getFileID(url) {
+  return url
+    .match(/\<(.*?)\>/)[0]
+    .split("/d/")
+    .pop()
+    .split("/edit")[0];
+}
+
+// dealing with checkbox
+app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
+  await ack();
+
+  const isChecked =
+    Array.isArray(body.actions[0].selected_options) &&
+    body.actions[0].selected_options.length;
+  const fileId = getFileID(body.message.text)
+
+  if (isChecked) {
+    drive.permissions.create(
+      {
+        resource: {
+          type: "anyone",
+          role: "reader",
+        },
+        fileId: fileId,
+        fields: "id",
+      },
+      function (err, res) {
+        if (err) {
+          // Handle error
+          console.log(err);
+        } else {
+          // console.log("DONE (reader)!")
+        }
+      }
+    );
+  } else {
+    drive.permissions.create(
+      {
+        resource: {
+          type: "anyone",
+          role: "writer",
+        },
+        fileId: fileId,
+        fields: "id",
+      },
+      function (err, res) {
+        if (err) {
+          // Handle error
+          console.log(err);
+        } else {
+          // console.log("DONE (writer)!")
+        }
+      }
+    );
+  }
+});
+
+function createUsers(users, role, fileId) {
+  for (const user in users) {
+    drive.permissions.create(
+      {
+        resource: {
+          type: "user",
+          role: role,
+        },
+        fileId: fileId,
+        fields: "id",
+        emailAddress: user,
+      },
+      function (err, res) {
+        if (err) {
+          // Handle error
+          console.log(err);
+        } else {
+          // console.log("DONE (writer)!")
+        }
+      }
+    );
+  }
+}
+
+async function getUsersFromChannel(channelId) {
+  let users = [];
+  try {
+    // Call the users.info method using the WebClient
+    const result = await client.conversations.members({
+      channel: channelId,
+    });
+    const members = result.members;
+    for (const member in members) {
+      try {
+        // Call the users.info method using the WebClient
+        const result = await client.users.info({
+          user: member,
+        });
+
+        console.log(result);
+        users.push(result.user.profile.email);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  return users;
+}
 
 // reading from file to see if already have token
 async function authenticate(callback) {
@@ -560,29 +873,29 @@ async function createFile(name, callback) {
         // Handle error
         console.error(err);
       } else {
-        drive.permissions.create(
-          {
-            resource: {
-              type: "anyone",
-              role: "writer",
-            },
-            fileId: file.data.id,
-            fields: "id",
-          },
-          function (err, res) {
-            if (err) {
-              // Handle error
-              console.log(err);
-            } else {
-              console.log(
-                `https://docs.google.com/document/d/${file.data.id}/edit`
-              );
-              callback(
-                `https://docs.google.com/document/d/${file.data.id}/edit`
-              );
-            }
-          }
-        );
+        // drive.permissions.create(
+        //   {
+        //     resource: {
+        //       type: "anyone",
+        //       role: "writer",
+        //     },
+        //     fileId: file.data.id,
+        //     fields: "id",
+        //   },
+        //   function (err, res) {
+        //     if (err) {
+        //       // Handle error
+        //       console.log(err);
+        //     } else {
+        //       console.log(
+        //         `https://docs.google.com/document/d/${file.data.id}/edit`
+        //       );
+        //       callback(
+        //         `https://docs.google.com/document/d/${file.data.id}/edit`
+        //       );
+        //     }
+        //   }
+        // );
       }
     }
   );
