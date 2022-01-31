@@ -235,6 +235,7 @@ app.action("create_meeting", async ({ body, ack, client }) => {
           {
             type: "actions",
             block_id: "block_conversation",
+            dispatch_action: true,
             elements: [
               {
                 type: "conversations_select",
@@ -570,9 +571,15 @@ app.view(
         }
 
         try {
-          const fileId = getFileID(url)
-          createUsers(getUsersFromChannel(values["block_conversation"]["action_block"]
-          .selected_conversation), "writer", fileId)
+          const fileId = getFileID(url);
+          getUsersFromChannel(values["block_conversation"]["action_block"].selected_conversation, client, createUsers, "writer", fileId);
+          // createUsers(
+          //   getUsersFromChannel(
+          //     values["block_conversation"]["action_block"].selected_conversation, client
+          //   ),
+          //   "writer",
+          //   fileId
+          // );
           // Call the chat.postMessage method using the WebClient
           const result = await client.chat.postMessage({
             channel:
@@ -696,7 +703,6 @@ app.view("create_note_modal", async ({ ack, body, view, client, logger }) => {
 
 function getFileID(url) {
   return url
-    .match(/\<(.*?)\>/)[0]
     .split("/d/")
     .pop()
     .split("/edit")[0];
@@ -709,60 +715,31 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
   const isChecked =
     Array.isArray(body.actions[0].selected_options) &&
     body.actions[0].selected_options.length;
-  const fileId = getFileID(body.message.text)
+  const fileId = getFileID(body.message.text.match(/\<(.*?)\>/)[0]);
+
+  console.log(body)
 
   if (isChecked) {
-    drive.permissions.create(
-      {
-        resource: {
-          type: "anyone",
-          role: "reader",
-        },
-        fileId: fileId,
-        fields: "id",
-      },
-      function (err, res) {
-        if (err) {
-          // Handle error
-          console.log(err);
-        } else {
-          // console.log("DONE (reader)!")
-        }
-      }
-    );
+    // have to do this new -> permissions.list and then permissions.update
+    // getUsersFromChannel(body.channel.id, client, createUsers, "reader", fileId);
   } else {
-    drive.permissions.create(
-      {
-        resource: {
-          type: "anyone",
-          role: "writer",
-        },
-        fileId: fileId,
-        fields: "id",
-      },
-      function (err, res) {
-        if (err) {
-          // Handle error
-          console.log(err);
-        } else {
-          // console.log("DONE (writer)!")
-        }
-      }
-    );
+    // getUsersFromChannel(body.channel.id, client, createUsers, "writer", fileId);
   }
 });
 
 function createUsers(users, role, fileId) {
-  for (const user in users) {
+  var filteredUsers = users.filter(x => x !== undefined);
+
+  for (const user of filteredUsers) {
     drive.permissions.create(
       {
         resource: {
           type: "user",
           role: role,
+          emailAddress: user,
         },
         fileId: fileId,
         fields: "id",
-        emailAddress: user,
       },
       function (err, res) {
         if (err) {
@@ -776,7 +753,7 @@ function createUsers(users, role, fileId) {
   }
 }
 
-async function getUsersFromChannel(channelId) {
+async function getUsersFromChannel(channelId, client, callback, role, fileId) {
   let users = [];
   try {
     // Call the users.info method using the WebClient
@@ -784,23 +761,25 @@ async function getUsersFromChannel(channelId) {
       channel: channelId,
     });
     const members = result.members;
-    for (const member in members) {
+    for (const member of members) {
       try {
         // Call the users.info method using the WebClient
         const result = await client.users.info({
           user: member,
         });
 
-        console.log(result);
+        // console.log(result);
         users.push(result.user.profile.email);
       } catch (error) {
         console.error(error);
       }
     }
+    callback(users, role, fileId)
   } catch (error) {
     console.error(error);
   }
-  return users;
+  console.log(users, "2")
+
 }
 
 // reading from file to see if already have token
@@ -873,29 +852,7 @@ async function createFile(name, callback) {
         // Handle error
         console.error(err);
       } else {
-        // drive.permissions.create(
-        //   {
-        //     resource: {
-        //       type: "anyone",
-        //       role: "writer",
-        //     },
-        //     fileId: file.data.id,
-        //     fields: "id",
-        //   },
-        //   function (err, res) {
-        //     if (err) {
-        //       // Handle error
-        //       console.log(err);
-        //     } else {
-        //       console.log(
-        //         `https://docs.google.com/document/d/${file.data.id}/edit`
-        //       );
-        //       callback(
-        //         `https://docs.google.com/document/d/${file.data.id}/edit`
-        //       );
-        //     }
-        //   }
-        // );
+        callback(`https://docs.google.com/document/d/${file.data.id}/edit`);
       }
     }
   );
@@ -921,3 +878,6 @@ function isValidHttpUrl(string) {
 // figure out refresh tokens and understand storing them
 // Figure out how to put authentication in separate file
 // dictionary ->
+
+// TODO:
+// - for notes add permissions logic
