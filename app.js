@@ -719,6 +719,20 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
 
   console.log(body)
 
+  drive.permissions.list(
+    {
+      fileId: fileId,
+    },
+    function (err, res) {
+      if (err) {
+        // Handle error
+        console.log(err);
+      } else {
+        console.log(res)
+      }
+    }
+  );
+
   if (isChecked) {
     // have to do this new -> permissions.list and then permissions.update
     // getUsersFromChannel(body.channel.id, client, createUsers, "reader", fileId);
