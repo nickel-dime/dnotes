@@ -289,7 +289,6 @@ app.action("create_meeting", async ({ body, ack, client }) => {
           {
             type: "actions",
             block_id: "block_conversation",
-            dispatch_action: true,
             elements: [
               {
                 type: "conversations_select",
