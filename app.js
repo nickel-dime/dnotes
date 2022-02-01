@@ -4,10 +4,10 @@
  * @file app.js
  * @author Asma Khan and Nikhil Goel
  * @contact (akhan9pink@gmail.com), (goepnik@gmail.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2022-02-01
- * 
+ *
  * @copyright Copyright (c) 2022
  *
  */
@@ -35,11 +35,12 @@ const oauth2Client = new google.auth.OAuth2(
 
   //  This is where Google redirects the user after they
   //  give permission to the dnotes application
-  "http://localhost:3000/oauth2callback"
+  "http://localhost:3001/oauth2callback"
 );
 
-const scopes = ["https://www.googleapis.com/auth/drive.file"];
+const scopes = ["https://www.googleapis.com/auth/drive"];
 const TOKEN_PATH = "token.json";
+let outerFolder = "";
 
 // Google Drive setup
 const drive = google.drive({
@@ -50,169 +51,265 @@ const drive = google.drive({
 (async () => {
   // Start the app
   await app.start(process.env.PORT || 3000);
+
+  fs.readFile("googleDrive", (err, file) => {
+    if (err) {
+    } else {
+      outerFolder = JSON.parse(file);
+    }
+  });
+
   authenticate(() => console.log("⚡️ Bolt app is running!"));
 })();
 
+
 /**
- * @brief 
+ * @brief
  * Listen to the app_home_opened Events API event to hear when a user opens the app from the sidebar
  * listens to an Event API after it has been subscribed to it in our app configuration.
  * This allows the app to take action when an event occurs in Slack.
- * 
+ *
  * @param payload - attempts to infer the team_id based on this incoming payload
  * @param client - provided to the app's listener using the WebClient
  */
 app.event("app_home_opened", async ({ payload, client }) => {
   const userId = payload.user;
+  const scheduledMessages = [];
+
+  fs.readFile("googleDrive", async (err, name) => {
+    try {
+      // Call the chat.postMessage method using the WebClient
+      const result = await client.team.info({});
+
+      if (err) {
+        var fileMetadata = {
+          name: result.team.name,
+          mimeType: "application/vnd.google-apps.folder",
+        };
+        drive.files.create(
+          {
+            resource: fileMetadata,
+            fields: "id",
+          },
+          async function (err, file) {
+            if (err) {
+              // Handle error
+              console.error(err);
+            } else {
+
+              fs.writeFile(
+                "googleDrive",
+                JSON.stringify(file.data.id),
+                (err) => {
+                  outerFolder = file.data.id;
+                  if (err) return console.error(err);
+                }
+              );
+
+              try {
+                // Call the chat.postMessage method using the WebClient
+                const result = await client.conversations.list({});
+
+                const channelIDArray = result.channels.map((channel) => [
+                  channel.id,
+                  channel.name,
+                ]);
+
+          
+
+                for (const channel of channelIDArray) {
+                  drive.files.create(
+                    {
+                      requestBody: {
+                        "name": channel[1],
+                        "appProperties": {
+                          "channelID": channel[0]
+                        },
+                        "mimeType": "application/vnd.google-apps.folder",
+                        "parents": [
+                          outerFolder
+                        ]
+                      }
+                    },
+                    function (err, file) {
+                      if (err) {
+                        // Handle error
+                        console.error(err);
+                      } else {
+                        console.log(file)
+                      }
+                    }
+                  );
+                }
+              } catch (error) {
+                console.error(error);
+              }
+            }
+          }
+        );
+      } else {
+        outerFolder = JSON.parse(name);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    console.log(outerFolder);
+  });
 
   try {
-    // Call the views.publish method using the WebClient passed to listeners
-    const result = await client.views.publish({
-      user_id: userId,
-      view: {
-        // Home tabs must be enabled in your app configuration page under "App Home"
 
-        type: "home",
-        blocks: [
-          {
-            type: "header",
-            text: {
-              type: "plain_text",
-              text: "Welcome",
-              emoji: true,
+    try {
+      // Call the views.publish method using the WebClient passed to listeners
+      const result = await client.views.publish({
+        user_id: userId,
+        view: {
+          // Home tabs must be enabled in your app configuration page under "App Home"
+
+          type: "home",
+          blocks: [
+            {
+              type: "header",
+              text: {
+                type: "plain_text",
+                text: "Welcome",
+                emoji: true,
+              },
             },
-          },
-          {
-            type: "divider",
-          },
-          {
-            type: "actions",
-            elements: [
-              {
+            {
+              type: "divider",
+            },
+            {
+              type: "actions",
+              elements: [
+                {
+                  type: "button",
+                  text: {
+                    type: "plain_text",
+                    emoji: true,
+                    text: "Create Meeting",
+                  },
+                  action_id: "create_meeting",
+                },
+                {
+                  type: "button",
+                  text: {
+                    type: "plain_text",
+                    text: "Create Doc",
+                    emoji: true,
+                  },
+                  //"value": "click_me_123",
+                  action_id: "create_note",
+                },
+              ],
+            },
+            {
+              type: "header",
+              text: {
+                type: "plain_text",
+                text: "Upcoming Meetings :calendar:",
+                emoji: true,
+              },
+            },
+            {
+              type: "divider",
+            },
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: "`11/20-11/22` *Beet the Competition*",
+              },
+              accessory: {
                 type: "button",
                 text: {
                   type: "plain_text",
+                  text: "Join Meeting",
                   emoji: true,
-                  text: "Create Meeting",
                 },
-                action_id: "create_meeting",
               },
-              {
+            },
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: "`12/01` *Daily Standup*",
+              },
+              accessory: {
                 type: "button",
                 text: {
                   type: "plain_text",
-                  text: "Create Doc",
+                  text: "Join Meeting",
                   emoji: true,
                 },
-                //"value": "click_me_123",
-                action_id: "create_note",
               },
-            ],
-          },
-          {
-            type: "header",
-            text: {
-              type: "plain_text",
-              text: "Upcoming Meetings :calendar:",
-              emoji: true,
             },
-          },
-          {
-            type: "divider",
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "`11/20-11/22` *Beet the Competition*",
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: "`11/13` *Business Exec Meeting*",
+              },
+              accessory: {
+                type: "button",
+                text: {
+                  type: "plain_text",
+                  text: "Join Meeting",
+                  emoji: true,
+                },
+              },
             },
-            accessory: {
-              type: "button",
+            {
+              type: "header",
               text: {
                 type: "plain_text",
-                text: "Join Meeting",
+                text: "Past Meetings :calendar:",
                 emoji: true,
               },
             },
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "`12/01` *Daily Standup*",
+            {
+              type: "divider",
             },
-            accessory: {
-              type: "button",
+            {
+              type: "section",
               text: {
-                type: "plain_text",
-                text: "Join Meeting",
-                emoji: true,
+                type: "mrkdwn",
+                text: "`10/21` *Conference Room Meeting*",
+              },
+              accessory: {
+                type: "button",
+                text: {
+                  type: "plain_text",
+                  text: "View Notes",
+                  emoji: true,
+                },
               },
             },
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "`11/13` *Business Exec Meeting*",
+            {
+              type: "divider",
             },
-            accessory: {
-              type: "button",
-              text: {
-                type: "plain_text",
-                text: "Join Meeting",
-                emoji: true,
-              },
+            {
+              type: "image",
+              image_url:
+                "https://media.istockphoto.com/vectors/creative-writing-and-storytelling-concept-illustration-copywriting-vector-id998352216?b=1&k=20&m=998352216&s=170667a&w=0&h=c2U3iK9JdEG8c5blChppXEMKHSkprWlCAgQj4skLack=",
+              alt_text: "inspiration",
             },
-          },
-          {
-            type: "header",
-            text: {
-              type: "plain_text",
-              text: "Past Meetings :calendar:",
-              emoji: true,
-            },
-          },
-          {
-            type: "divider",
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "`10/21` *Conference Room Meeting*",
-            },
-            accessory: {
-              type: "button",
-              text: {
-                type: "plain_text",
-                text: "View Notes",
-                emoji: true,
-              },
-            },
-          },
-          {
-            type: "divider",
-          },
-          {
-            type: "image",
-            image_url:
-              "https://media.istockphoto.com/vectors/creative-writing-and-storytelling-concept-illustration-copywriting-vector-id998352216?b=1&k=20&m=998352216&s=170667a&w=0&h=c2U3iK9JdEG8c5blChppXEMKHSkprWlCAgQj4skLack=",
-            alt_text: "inspiration",
-          },
-        ],
-      },
-    });
+          ],
+        },
+      });
+    } catch (error) {
+      console.error(error);
+    }
   } catch (error) {
     console.error(error);
   }
 });
 
 /**
- * @brief 
+ * @brief
  * Listens to a user action. The use of ack() tells Slack that a request was received and then updates the
  * Slack user interface accordingly.
- * 
+ *
  * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
  */
 app.action("action_block", async ({ ack }) => {
@@ -220,10 +317,10 @@ app.action("action_block", async ({ ack }) => {
 });
 
 /**
- * @brief 
+ * @brief
  * Listens to a user action of clicking the "join call" button. The use of ack() tells Slack that a request was received and then updates the
- * Slack user interface accordingly. 
- * 
+ * Slack user interface accordingly.
+ *
  * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
  */
 app.action("join_call", async ({ ack }) => {
@@ -231,10 +328,10 @@ app.action("join_call", async ({ ack }) => {
 });
 
 /**
- * @brief 
+ * @brief
  * Listens to a user action of clicking the "meeting notes" button. The use of ack() tells Slack that a request was received and then updates the
  * Slack user interface accordingly.
- * 
+ *
  * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
  */
 app.action("meeting_notes", async ({ ack }) => {
@@ -242,7 +339,7 @@ app.action("meeting_notes", async ({ ack }) => {
 });
 
 /**
- * @brief 
+ * @brief
  * Create meeting modal is a focused surface that allows to collect user data and display dynamic information.
  * Listens to a user action of clicking the "create meeting" button. Using ack() tells Slack that a request
  * was received and then updates the Slack user interface accordingly. This function opens a modal
@@ -381,23 +478,23 @@ app.action("create_meeting", async ({ body, ack, client }) => {
               emoji: true,
             },
           },
-          {
-            type: "section",
-            block_id: "block_sub",
-            text: {
-              type: "mrkdwn",
-              text: "Sub-Folder: ",
-            },
-            accessory: {
-              type: "multi_conversations_select",
-              placeholder: {
-                type: "plain_text",
-                text: "Select conversations",
-                emoji: true,
-              },
-              action_id: "multi_conversations_select-action",
-            },
-          },
+          // {
+          //   type: "section",
+          //   block_id: "block_sub",
+          //   text: {
+          //     type: "mrkdwn",
+          //     text: "Sub-Folder: ",
+          //   },
+          //   accessory: {
+          //     type: "multi_conversations_select",
+          //     placeholder: {
+          //       type: "plain_text",
+          //       text: "Select conversations",
+          //       emoji: true,
+          //     },
+          //     action_id: "multi_conversations_select-action",
+          //   },
+          // },
           {
             type: "input",
             block_id: "block_url",
@@ -440,7 +537,7 @@ app.action("create_meeting", async ({ body, ack, client }) => {
 });
 
 /**
- * @brief 
+ * @brief
  * Create note modal is a focused surface that allows to collect user data and display dynamic information.
  * Listens to a user action of clicking the "create note" button. Using ack() tells Slack that a request
  * was received and then updates the Slack user interface accordingly. This function opens a modal
@@ -532,37 +629,37 @@ app.action("create_note", async ({ body, ack, client }) => {
               emoji: true,
             },
           },
-          {
-            type: "divider",
-          },
-          {
-            type: "header",
-            text: {
-              type: "plain_text",
-              text: "Optional:",
-              emoji: true,
-            },
-          },
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "Sub-Folder: ",
-            },
-            accessory: {
-              type: "multi_conversations_select",
-              placeholder: {
-                type: "plain_text",
-                text: "Select conversations",
-                emoji: true,
-              },
-              filter: {
-                include: ["mpim", "im", "public"],
-                exclude_bot_users: true,
-              },
-              action_id: "multi_conversations_select-action",
-            },
-          },
+          // {
+          //   type: "divider",
+          // },
+          // {
+          //   type: "header",
+          //   text: {
+          //     type: "plain_text",
+          //     text: "Optional:",
+          //     emoji: true,
+          //   },
+          // },
+          // {
+          //   type: "section",
+          //   text: {
+          //     type: "mrkdwn",
+          //     text: "Sub-Folder: ",
+          //   },
+          //   accessory: {
+          //     type: "multi_conversations_select",
+          //     placeholder: {
+          //       type: "plain_text",
+          //       text: "Select conversations",
+          //       emoji: true,
+          //     },
+          //     filter: {
+          //       include: ["mpim", "im", "public"],
+          //       exclude_bot_users: true,
+          //     },
+          //     action_id: "multi_conversations_select-action",
+          //   },
+          // },
         ],
       },
     });
@@ -572,7 +669,7 @@ app.action("create_note", async ({ body, ack, client }) => {
 });
 
 /**
- * @brief 
+ * @brief
  * Handle a view_submission request for "create meeting" from modal. Passes the view_id, views the payload, views the identifier.
  * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
  * @param body - event body
@@ -589,15 +686,38 @@ app.view(
     // Do whatever you want with the input data - here we're saving it to a DB then sending the user a verifcation of their submission
 
     const values = view.state.values;
-    // console.log(values);
+
+    const hoursBefore = 1;
+
+    // unix time stamp
+    const time = values["block_time"]["timepicker-action"].selected_time;
+    const date = values["block_date"]["datepicker-action"].selected_date;
+    const combined = date.concat(" ", time);
+    let unixTimeStamp =
+      new Date(combined).getTime() / 1000 - 3600 * hoursBefore;
+    const currentTime = (Date.now() / 1000) | 0;
+
+    if (currentTime > unixTimeStamp) {
+      unixTimeStamp = currentTime + 15;
+    }
+
+    var date2 = new Date(unixTimeStamp * 1000);
+    // Hours part from the timestamp
+    var hours = date2.getHours();
+    // Minutes part from the timestamp
+    var minutes = "0" + date2.getMinutes();
+    // Seconds part from the timestamp
+    var seconds = "0" + date2.getSeconds();
+
+    // Will display time in 10:30:23 format
+    var formattedTime =
+      hours + ":" + minutes.substr(-2) + ":" + seconds.substr(-2);
 
     await createFile(
       values["block_title"]["plain_text_input-action"].value,
+      values["block_conversation"]["action_block"].selected_conversation,
       async function (url) {
         let elementsToAdd = [];
-        console.log(
-          values["block_url"]["plain_text_input-action"].value !== null
-        );
         if (
           isValidHttpUrl(values["block_url"]["plain_text_input-action"].value)
         ) {
@@ -643,20 +763,21 @@ app.view(
 
         try {
           const fileId = getFileID(url);
-          getUsersFromChannel(values["block_conversation"]["action_block"].selected_conversation, client, createUsers, "writer", fileId);
-          // createUsers(
-          //   getUsersFromChannel(
-          //     values["block_conversation"]["action_block"].selected_conversation, client
-          //   ),
-          //   "writer",
-          //   fileId
-          // );
+          getUsersFromChannel(
+            values["block_conversation"]["action_block"].selected_conversation,
+            client,
+            createUsers,
+            "writer",
+            fileId
+          );
+
           // Call the chat.postMessage method using the WebClient
-          const result = await client.chat.postMessage({
+          const result = await client.chat.scheduleMessage({
             channel:
               values["block_conversation"]["action_block"]
                 .selected_conversation,
             text: `Meeting at ${values["block_date"]["datepicker-action"].selected_date} ${values["block_time"]["timepicker-action"].selected_time}. ${url} to join meeting!`,
+            post_at: unixTimeStamp,
             blocks: [
               {
                 type: "header",
@@ -718,7 +839,7 @@ app.view(
 );
 
 /**
- * @brief 
+ * @brief
  * Handle a view_submission request for "create note" from modal. Passes the view_id, views the payload, views the identifier.
  * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
  * @param body - event body
@@ -733,10 +854,10 @@ app.view("create_note_modal", async ({ ack, body, view, client, logger }) => {
   // Do whatever you want with the input data - here we're saving it to a DB then sending the user a verifcation of their submission
 
   const values = view.state.values;
-  console.log(values);
 
   await createFile(
     values["note_header"]["plain_text_input-action"].value,
+    values["note_channel"]["action_block"].selected_conversation,
     async function (url) {
       try {
         // Call the chat.postMessage method using the WebClient
@@ -780,19 +901,16 @@ app.view("create_note_modal", async ({ ack, body, view, client, logger }) => {
 });
 
 /**
- * @brief 
+ * @brief
  * Creates...
  * @param url - event body
  */
 function getFileID(url) {
-  return url
-    .split("/d/")
-    .pop()
-    .split("/edit")[0];
+  return url.split("/d/").pop().split("/edit")[0];
 }
 
 /**
- * @brief 
+ * @brief
  * Action handler for a check box action for message preview type.
  * @param body - event body
  * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
@@ -806,8 +924,6 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
     body.actions[0].selected_options.length;
   const fileId = getFileID(body.message.text.match(/\<(.*?)\>/)[0]);
 
-  console.log(body)
-
   drive.permissions.list(
     {
       fileId: fileId,
@@ -817,7 +933,29 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
         // Handle error
         console.log(err);
       } else {
-        console.log(res)
+        const permissions = res.data.permissions;
+        for (const permission of permissions) {
+          if (permission.role !== "owner") {
+            role = isChecked ? "reader" : "writer";
+            drive.permissions.update(
+              {
+                fileId: fileId,
+                permissionId: permission.id,
+                resource: {
+                  role: role,
+                },
+              },
+              function (err, res) {
+                if (err) {
+                  // Handle error
+                  console.log(err);
+                } else {
+                  // console.log(res);
+                }
+              }
+            );
+          }
+        }
       }
     }
   );
@@ -831,14 +969,14 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
 });
 
 /**
- * @brief 
+ * @brief
  * Creates...
  * @param users -
- * @param role - 
- * @param fileID - 
+ * @param role -
+ * @param fileID -
  */
 function createUsers(users, role, fileId) {
-  var filteredUsers = users.filter(x => x !== undefined);
+  var filteredUsers = users.filter((x) => x !== undefined);
 
   for (const user of filteredUsers) {
     drive.permissions.create(
@@ -864,13 +1002,13 @@ function createUsers(users, role, fileId) {
 }
 
 /**
- * @brief 
+ * @brief
  * Creates...
  * @param channelId -
- * @param client - 
- * @param callback - 
+ * @param client -
+ * @param callback -
  * @param role -
- * @param fileID- 
+ * @param fileID-
  */
 async function getUsersFromChannel(channelId, client, callback, role, fileId) {
   let users = [];
@@ -893,18 +1031,16 @@ async function getUsersFromChannel(channelId, client, callback, role, fileId) {
         console.error(error);
       }
     }
-    callback(users, role, fileId)
+    callback(users, role, fileId);
   } catch (error) {
     console.error(error);
   }
-  console.log(users, "2")
-
 }
 
 /**
  * @brief Reading from file to see if already have token
- * @param callback - 
- * @returns - 
+ * @param callback -
+ * @returns -
  */
 async function authenticate(callback) {
   fs.readFile(TOKEN_PATH, (err, token) => {
@@ -916,9 +1052,9 @@ async function authenticate(callback) {
 
 /**
  * @brief Open an http server to accept the oauth callback.
- * 
- * @param callback - 
- * @returns - 
+ *
+ * @param callback -
+ * @returns -
  */
 async function getAccessToken(callback) {
   return new Promise((resolve, reject) => {
@@ -932,7 +1068,7 @@ async function getAccessToken(callback) {
       .createServer(async (req, res) => {
         try {
           if (req.url.indexOf("/oauth2callback") > -1) {
-            const qs = new url.URL(req.url, "http://localhost:3050")
+            const qs = new url.URL(req.url, "http://localhost:3001")
               .searchParams;
             res.end("Authentication successful! Please return to the console.");
             server.destroy();
@@ -948,7 +1084,7 @@ async function getAccessToken(callback) {
           reject(e);
         }
       })
-      .listen(3000, () => {
+      .listen(3001, () => {
         // open the browser to the authorize url to start the workflow
         opn(authorizeUrl, { wait: false }).then((cp) => cp.unref());
       });
@@ -962,28 +1098,52 @@ async function getAccessToken(callback) {
  * ATTENTION: NEED TO FIGURE OUT PARENT THING TO PUT IN CORRECT FODLDER (pass in parents array)
  *
  * @param {String} name - name of file you want created
- * @param callback - 
+ * @param callback -
  * @returns - url of file
  */
-async function createFile(name, callback) {
-  // return function () {
-  drive.files.create(
+async function createFile(name, channel, callback) {
+  drive.files.list(
     {
-      requestBody: {
-        mimeType: "application/vnd.google-apps.document",
-        name: name,
-        parents: ["14W6W_jCUxuFI56ZJKYdIPjkeGUtWC65I"],
-      },
+      q: `'${outerFolder}' in parents and mimeType='application/vnd.google-apps.folder'`,
+      fields: "*",
     },
-    function (err, file) {
+    function (err, folder) {
       if (err) {
         // Handle error
         console.error(err);
       } else {
-        callback(`https://docs.google.com/document/d/${file.data.id}/edit`);
+        let id = "";
+        for (const fold of folder.data.files) {
+          
+          if (fold.appProperties.channelID === channel) {
+            id = fold.id;
+          }
+        }
+
+        drive.files.create(
+          {
+            requestBody: {
+              mimeType: "application/vnd.google-apps.document",
+              name: name,
+              parents: [id], //"14W6W_jCUxuFI56ZJKYdIPjkeGUtWC65I",
+            },
+          },
+          function (err, file) {
+            if (err) {
+              // Handle error
+              console.error(err);
+            } else {
+              callback(
+                `https://docs.google.com/document/d/${file.data.id}/edit`
+              );
+            }
+          }
+        );
       }
     }
   );
+  // return function () {
+
   // };
 }
 
@@ -1015,4 +1175,16 @@ function isValidHttpUrl(string) {
 // dictionary ->
 
 // TODO:
-// - for notes add permissions logic
+// - on add channel/delete channel add appropriate folder
+// - add permissions to google drive folders
+// - make it look prettier (MESSAGE & HOME PAGE)
+// - remove subfolders
+// - recurring meetings
+// - upcoming & past meetings
+// - shortcuts & slash commands
+
+
+// - review app
+// - create video
+// - edit submission
+// - 
