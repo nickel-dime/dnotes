@@ -1,3 +1,17 @@
+/**
+ * dnotes: be on the same page
+ * December 2021 - February 2022
+ * @file app.js
+ * @author Asma Khan and Nikhil Goel
+ * @contact (akhan9pink@gmail.com), (goepnik@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2022-02-01
+ * 
+ * @copyright Copyright (c) 2022
+ *
+ */
+
 const { App } = require("@slack/bolt");
 require("dotenv").config();
 const axios = require("axios");
@@ -8,39 +22,46 @@ const opn = require("open");
 const destroyer = require("server-destroy");
 const fs = require("fs");
 
-// Initializes your app with your bot token and signing secret
+// Initializes the app with the bot token and signing secret
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
 });
 
-// AUTHENTICATION -> Settuping up oauth2 client
+// AUTHENTICATION -> Sets up the oauth2 client
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  /*
-   * This is where Google will redirect the user after they
-   * give permission to your application
-   */
+
+  //  This is where Google redirects the user after they
+  //  give permission to the dnotes application
   "http://localhost:3000/oauth2callback"
 );
 
 const scopes = ["https://www.googleapis.com/auth/drive.file"];
 const TOKEN_PATH = "token.json";
 
-// google drive setup
+// Google Drive setup
 const drive = google.drive({
   version: "v3",
   auth: oauth2Client,
 });
 
 (async () => {
-  // Start your app
+  // Start the app
   await app.start(process.env.PORT || 3000);
   authenticate(() => console.log("⚡️ Bolt app is running!"));
 })();
 
-// Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebar
+/**
+ * @brief 
+ * Listen to the app_home_opened Events API event to hear when a user opens the app from the sidebar
+ * listens to an Event API after it has been subscribed to it in our app configuration.
+ * This allows the app to take action when an event occurs in Slack.
+ * 
+ * @param payload - attempts to infer the team_id based on this incoming payload
+ * @param client - provided to the app's listener using the WebClient
+ */
 app.event("app_home_opened", async ({ payload, client }) => {
   const userId = payload.user;
 
@@ -187,16 +208,49 @@ app.event("app_home_opened", async ({ payload, client }) => {
   }
 });
 
+/**
+ * @brief 
+ * Listens to a user action. The use of ack() tells Slack that a request was received and then updates the
+ * Slack user interface accordingly.
+ * 
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ */
 app.action("action_block", async ({ ack }) => {
   await ack();
 });
+
+/**
+ * @brief 
+ * Listens to a user action of clicking the "join call" button. The use of ack() tells Slack that a request was received and then updates the
+ * Slack user interface accordingly. 
+ * 
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ */
 app.action("join_call", async ({ ack }) => {
   await ack();
 });
+
+/**
+ * @brief 
+ * Listens to a user action of clicking the "meeting notes" button. The use of ack() tells Slack that a request was received and then updates the
+ * Slack user interface accordingly.
+ * 
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ */
 app.action("meeting_notes", async ({ ack }) => {
   await ack();
 });
 
+/**
+ * @brief 
+ * Create meeting modal is a focused surface that allows to collect user data and display dynamic information.
+ * Listens to a user action of clicking the "create meeting" button. Using ack() tells Slack that a request
+ * was received and then updates the Slack user interface accordingly. This function opens a modal
+ * that confirms the action the user is taking. Passes the view_id, views the payload, views the identifier.
+ * @param body - event body
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ * @param client - request payload
+ */
 app.action("create_meeting", async ({ body, ack, client }) => {
   // Acknowledge shortcut request
   ack();
@@ -386,6 +440,16 @@ app.action("create_meeting", async ({ body, ack, client }) => {
   }
 });
 
+/**
+ * @brief 
+ * Create note modal is a focused surface that allows to collect user data and display dynamic information.
+ * Listens to a user action of clicking the "create note" button. Using ack() tells Slack that a request
+ * was received and then updates the Slack user interface accordingly. This function opens a modal
+ * that confirms the action the user is taking. Passes the view_id, views the payload, views the identifier.
+ * @param body - event body
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ * @param client - request payload
+ */
 app.action("create_note", async ({ body, ack, client }) => {
   // Acknowledge shortcut request
   ack();
@@ -508,7 +572,15 @@ app.action("create_note", async ({ body, ack, client }) => {
   }
 });
 
-// Handle a view_submission request
+/**
+ * @brief 
+ * Handle a view_submission request for "create meeting" from modal. Passes the view_id, views the payload, views the identifier.
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ * @param body - event body
+ * @param view - get the value from the input block
+ * @param client - request payload
+ * @param logger - logging functionality for the application
+ */
 app.view(
   "create_meeting_modal",
   async ({ ack, body, view, client, logger }) => {
@@ -646,8 +718,15 @@ app.view(
   }
 );
 
-// create_note_modal
-// note modal
+/**
+ * @brief 
+ * Handle a view_submission request for "create note" from modal. Passes the view_id, views the payload, views the identifier.
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ * @param body - event body
+ * @param view - get the value from the input block
+ * @param client - request payload
+ * @param logger - logging functionality for the application
+ */
 app.view("create_note_modal", async ({ ack, body, view, client, logger }) => {
   // Acknowledge the view_submission request
   await ack();
@@ -701,6 +780,11 @@ app.view("create_note_modal", async ({ ack, body, view, client, logger }) => {
   );
 });
 
+/**
+ * @brief 
+ * Creates...
+ * @param url - event body
+ */
 function getFileID(url) {
   return url
     .split("/d/")
@@ -708,7 +792,13 @@ function getFileID(url) {
     .split("/edit")[0];
 }
 
-// dealing with checkbox
+/**
+ * @brief 
+ * Action handler for a check box action for message preview type.
+ * @param body - event body
+ * @param ack - acknowledges that a request received from Slack (ack: AckFn<void> | AckFn<string | SayArguments> | AckFn<DialogValidation>)
+ * @param client - request payload
+ */
 app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
   await ack();
 
@@ -741,6 +831,13 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
   }
 });
 
+/**
+ * @brief 
+ * Creates...
+ * @param users -
+ * @param role - 
+ * @param fileID - 
+ */
 function createUsers(users, role, fileId) {
   var filteredUsers = users.filter(x => x !== undefined);
 
@@ -767,6 +864,15 @@ function createUsers(users, role, fileId) {
   }
 }
 
+/**
+ * @brief 
+ * Creates...
+ * @param channelId -
+ * @param client - 
+ * @param callback - 
+ * @param role -
+ * @param fileID- 
+ */
 async function getUsersFromChannel(channelId, client, callback, role, fileId) {
   let users = [];
   try {
@@ -796,7 +902,11 @@ async function getUsersFromChannel(channelId, client, callback, role, fileId) {
 
 }
 
-// reading from file to see if already have token
+/**
+ * @brief Reading from file to see if already have token
+ * @param callback - 
+ * @returns - 
+ */
 async function authenticate(callback) {
   fs.readFile(TOKEN_PATH, (err, token) => {
     if (err) return getAccessToken(callback);
@@ -806,7 +916,10 @@ async function authenticate(callback) {
 }
 
 /**
- * Open an http server to accept the oauth callback. In this simple example, the only request to our webserver is to /callback?code=<code>
+ * @brief Open an http server to accept the oauth callback.
+ * 
+ * @param callback - 
+ * @returns - 
  */
 async function getAccessToken(callback) {
   return new Promise((resolve, reject) => {
@@ -845,11 +958,13 @@ async function getAccessToken(callback) {
 }
 
 /**
+ * @brief
  * Creates a file in google drive
  * ATTENTION: NEED TO FIGURE OUT PARENT THING TO PUT IN CORRECT FODLDER (pass in parents array)
  *
- * @param {String} name name of file you want created
- * @returns url of file
+ * @param {String} name - name of file you want created
+ * @param callback - 
+ * @returns - url of file
  */
 async function createFile(name, callback) {
   // return function () {
@@ -873,6 +988,13 @@ async function createFile(name, callback) {
   // };
 }
 
+/**
+ * @brief
+ * Creates...
+ *
+ * @param {String} name - name of file you want created
+ * @returns - url of file
+ */
 function isValidHttpUrl(string) {
   let url;
 
