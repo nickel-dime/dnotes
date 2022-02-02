@@ -34,4 +34,6 @@ Features of project:
 - View past meetings with the option to view the meeting’s notes
 - Send out a message for a meeting with a redirecting button to the meeting notes an hour before in the Slack conversation
 - Choose to check a box that indicates a meeting is finished which changes the notes settings from editable to viewable. 
+- Adds notes into a Google Drive Folder corresponding to the name of the channel it was sent in
+- Organizes all the folders into one big workspace folder
 
