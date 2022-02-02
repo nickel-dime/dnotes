@@ -39,3 +39,8 @@ Features of project:
 - Adds notes into a Google Drive Folder corresponding to the name of the channel it was sent in
 - Organizes all the folders into one big workspace folder
 
+<img width="965" alt="Screen Shot 2022-02-01 at 5 28 46 PM" src="https://user-images.githubusercontent.com/78252076/152085292-e0fdbeaa-4c3a-4977-9030-18100972773b.png">
+<img width="877" alt="Screen Shot 2022-02-01 at 5 29 09 PM" src="https://user-images.githubusercontent.com/78252076/152085295-1f23227e-90ff-4c3a-b9c0-1fccc52aa080.png">
+<img width="961" alt="Screen Shot 2022-02-01 at 5 29 19 PM" src="https://user-images.githubusercontent.com/78252076/152085298-5deb2384-5597-410f-b4a3-f2ee00eeaf89.png">
+<img width="963" alt="Screen Shot 2022-02-01 at 5 29 30 PM" src="https://user-images.githubusercontent.com/78252076/152085302-855b043e-dee1-4da0-b468-03e719474e5a.png">
+
