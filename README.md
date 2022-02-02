@@ -1,4 +1,6 @@
 # dnotes
+https://user-images.githubusercontent.com/55257208/152078660-44710286-efb0-434d-921f-67be067f95bb.mp4
+
 This project builds a Slack app using Bolt for JavaScript. 
 
 Can you pull up the notes from our meeting last month? As often as we have meetings, they finish and are forgotten.
