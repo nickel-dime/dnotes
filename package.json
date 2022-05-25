@@ -1,0 +1,26 @@
+{
+  "name": "first-bolt-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nickel-dime/first-bolt-app.git"
+  },
+  "author": "Asma and Nikhil",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nickel-dime/first-bolt-app/issues"
+  },
+  "homepage": "https://github.com/nickel-dime/first-bolt-app#readme",
+  "dependencies": {
+    "@slack/bolt": "^3.8.1",
+    "dotenv": "^10.0.0",
+    "googleapis": "^92.0.0",
+    "open": "^8.4.0",
+    "server-destroy": "^1.0.1"
+  }
+}
