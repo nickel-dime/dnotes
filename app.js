@@ -12,15 +12,16 @@
  *
  */
 
-const { App } = require("@slack/bolt");
-require("dotenv").config();
-const axios = require("axios");
+//essentially setting up app connections such as servers and listeners
+const { App } = require("@slack/bolt"); //load slack's bolt framework
+require("dotenv").config(); 
+const axios = require("axios"); //load gaxios form google which an interface that simplifies using an HTTP request client
 const { google } = require("googleapis");
-const http = require("http");
+const http = require("http"); //load HTTP module
 const url = require("url");
-const opn = require("open");
-const destroyer = require("server-destroy");
-const fs = require("fs");
+const opn = require("open"); //opens the url in the default browser
+const destroyer = require("server-destroy"); //kill the server, it keeps processes safer and obv memory usage
+const fs = require("fs"); //lets us use filesystem
 
 // Initializes the app with the bot token and signing secret
 const app = new App({
@@ -28,10 +29,11 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
 });
 
+//the idea of google login page and entering your details then being redirected to dnotes
 // AUTHENTICATION -> Sets up the oauth2 client
 const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_CLIENT_ID, //unique identifier for browser to device
+  process.env.GOOGLE_CLIENT_SECRET, //known to your application and auhtorization server, gives to only authorized requestors
 
   //  This is where Google redirects the user after they
   //  give permission to the dnotes application
@@ -45,7 +47,7 @@ let outerFolder = "";
 // Google Drive setup
 const drive = google.drive({
   version: "v3",
-  auth: oauth2Client,
+  auth: oauth2Client, //uses the const val stored from earlier
 });
 
 (async () => {
@@ -53,8 +55,8 @@ const drive = google.drive({
   await app.start(process.env.PORT || 3000);
 
   fs.readFile("googleDrive", (err, file) => {
-    if (err) {
-    } else {
+    if (err) { 
+    } else { //if not an error then read the file in and this will be the first level
       outerFolder = JSON.parse(file);
     }
   });
@@ -79,7 +81,7 @@ app.event("app_home_opened", async ({ payload, client }) => {
   fs.readFile("googleDrive", async (err, name) => {
     try {
       // Call the chat.postMessage method using the WebClient
-      const result = await client.team.info({});
+      const result = await client.team.info({}); //here's where the channel info is coming from
 
       if (err) {
         var fileMetadata = {
@@ -88,7 +90,7 @@ app.event("app_home_opened", async ({ payload, client }) => {
         };
         drive.files.create(
           {
-            resource: fileMetadata,
+            resource: fileMetadata, //creating a folder in the google drive based off of the info from the slack channel
             fields: "id",
           },
           async function (err, file) {
@@ -97,7 +99,7 @@ app.event("app_home_opened", async ({ payload, client }) => {
               console.error(err);
             } else {
 
-              fs.writeFile(
+              fs.writeFile( //writing the data to the drive
                 "googleDrive",
                 JSON.stringify(file.data.id),
                 (err) => {
@@ -112,13 +114,13 @@ app.event("app_home_opened", async ({ payload, client }) => {
 
                 const channelIDArray = result.channels.map((channel) => [
                   channel.id,
-                  channel.name,
+                  channel.name, //getting channel name from here
                 ]);
 
           
 
                 for (const channel of channelIDArray) {
-                  drive.files.create(
+                  drive.files.create( //creates folder based off of channel name
                     {
                       requestBody: {
                         "name": channel[1],
@@ -127,7 +129,7 @@ app.event("app_home_opened", async ({ payload, client }) => {
                         },
                         "mimeType": "application/vnd.google-apps.folder",
                         "parents": [
-                          outerFolder
+                          outerFolder //sets it to be the first level
                         ]
                       }
                     },
@@ -685,9 +687,9 @@ app.view(
 
     // Do whatever you want with the input data - here we're saving it to a DB then sending the user a verifcation of their submission
 
-    const values = view.state.values;
+    const values = view.state.values; //what values are being stored in state?
 
-    const hoursBefore = 1;
+    const hoursBefore = 1; //value of when the message sends out
 
     // unix time stamp
     const time = values["block_time"]["timepicker-action"].selected_time;
@@ -698,7 +700,7 @@ app.view(
     const currentTime = (Date.now() / 1000) | 0;
 
     if (currentTime > unixTimeStamp) {
-      unixTimeStamp = currentTime + 15;
+      unixTimeStamp = currentTime + 15; //to take care of not sending right at the time of the message being created because otherwise the timing would mess up and so it acts as a kind of buffer
     }
 
     var date2 = new Date(unixTimeStamp * 1000);
@@ -906,7 +908,7 @@ app.view("create_note_modal", async ({ ack, body, view, client, logger }) => {
  * @param url - event body
  */
 function getFileID(url) {
-  return url.split("/d/").pop().split("/edit")[0];
+  return url.split("/d/").pop().split("/edit")[0]; //i need to see the original url so i know what it's holding now
 }
 
 /**
@@ -922,7 +924,7 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
   const isChecked =
     Array.isArray(body.actions[0].selected_options) &&
     body.actions[0].selected_options.length;
-  const fileId = getFileID(body.message.text.match(/\<(.*?)\>/)[0]);
+  const fileId = getFileID(body.message.text.match(/\<(.*?)\>/)[0]); //you need the fileID to identify the message
 
   drive.permissions.list(
     {
@@ -932,12 +934,12 @@ app.action("actionId-1", async ({ ack, body, view, client, logger }) => {
       if (err) {
         // Handle error
         console.log(err);
-      } else {
-        const permissions = res.data.permissions;
-        for (const permission of permissions) {
-          if (permission.role !== "owner") {
-            role = isChecked ? "reader" : "writer";
-            drive.permissions.update(
+      } else { 
+        const permissions = res.data.permissions; //is this being done here to show that only certain people can check off the box? or is it saying that once someone checks it off that gets updated
+        for (const permission of permissions) { //looping through all the permissions to find the one needed
+          if (permission.role !== "owner") { //as long as the role is not owner
+            role = isChecked ? "reader" : "writer"; 
+            drive.permissions.update( //updates the google drive permissions based off the persmissions obtained from data
               {
                 fileId: fileId,
                 permissionId: permission.id,
@@ -1036,7 +1038,7 @@ async function getUsersFromChannel(channelId, client, callback, role, fileId) {
     console.error(error);
   }
 }
-
+/////////////
 /**
  * @brief Reading from file to see if already have token
  * @param callback -
@@ -1181,10 +1183,4 @@ function isValidHttpUrl(string) {
 // - remove subfolders
 // - recurring meetings
 // - upcoming & past meetings
-// - shortcuts & slash commands
-
-
-// - review app
-// - create video
-// - edit submission
-// - 
+// - shortcuts & slash commands 
